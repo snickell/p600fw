@@ -551,6 +551,9 @@ int main(void)
 	CPU_PRESCALE(CPU_16MHz);  
 
 #ifdef DEBUG
+	// setup stdout to use USB for printf & friends	
+	usb_stdout_init();
+	
 	// initialize the USB, and then wait for the host
 	// to set configuration.  If the Teensy is powered
 	// without a PC connected to the USB port, this 

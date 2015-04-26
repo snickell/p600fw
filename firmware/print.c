@@ -28,6 +28,28 @@
 
 #include "print.h"
 
+static FILE usb_stdout;
+
+static int usb_stdout_putchar(char c, FILE* stream)
+{
+	(void)stream;
+	int8_t result;
+	
+	result = usb_debug_putchar(c);
+	
+	if (c == '\n')
+		usb_debug_flush_output();
+	
+	return result;
+}
+
+void usb_stdout_init(void)
+{
+	fdev_setup_stream(&usb_stdout, usb_stdout_putchar, NULL, _FDEV_SETUP_WRITE);
+	stdout = &usb_stdout;
+}
+
+
 void print_P(const char *s)
 {
 	char c;
@@ -56,7 +78,4 @@ void phex16(unsigned int i)
 	phex(i >> 8);
 	phex(i);
 }
-
-
-
 
