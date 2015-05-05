@@ -270,19 +270,40 @@ static LOWERCODESIZE int8_t tuneOffset(p600CV_t cv,uint8_t nthC, uint8_t lowestN
 	return 0;
 }
 
+
+
+static LOWERCODESIZE void setNoteTuning(uint8_t note, int32_t noteTuning)
+{
+	// Clamp to uint16_t
+	if (noteTuning > UINT16_MAX)
+		noteTuning = UINT16_MAX;
+	else if (noteTuning < 0)
+		noteTuning = 0;
+	
+#ifdef DEBUG
+	print("setNoteTuning(");
+	phex(note);
+	print(", ");
+	phex16(noteTuning);
+	print(")\n");
+#endif
+
+	currentPreset.perNoteTuning[note] = noteTuning;
+}
+
 void tuner_setNoteTuning(uint8_t note, double numSemitones)
 {
-	if (note >= TUNER_NOTE_COUNT) {
-		return;
-	}
-	
-	if (numSemitones < 0.0)
-		numSemitones = 0.0;
-	else if (numSemitones > 12.0)
-		numSemitones = 12.0;
-	
-	currentPreset.perNoteTuning[note] = numSemitones * TUNING_UNITS_PER_SEMITONE;
+	if(note<TUNER_NOTE_COUNT)
+		setNoteTuning(note, numSemitones * TUNING_UNITS_PER_SEMITONE);
 }
+
+void tuner_nudgeNoteTuning(uint8_t note, int32_t deltaTuningUnits)
+{
+	if(note<TUNER_NOTE_COUNT)
+		setNoteTuning(note, currentPreset.perNoteTuning[note] + deltaTuningUnits);
+}
+
+
 
 static LOWERCODESIZE void tuneCV(p600CV_t oscCV, p600CV_t ampCV)
 {

@@ -13,5 +13,6 @@ void tuner_init(void);
 void tuner_tuneSynth(void);
 void tuner_scalingAdjustment(void);
 void tuner_setNoteTuning(uint8_t note, double numSemitonesAboveFundamental);
+void tuner_nudgeNoteTuning(uint8_t note, int32_t deltaTuningUnits);
 
 #endif	/* TUNER_H */  
