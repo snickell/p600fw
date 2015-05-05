@@ -1228,26 +1228,43 @@ static void retuneLastNotePressed(int16_t bend, uint16_t modulation, uint8_t mas
 	
 	if (assigner_getLatestNotePressed(&note))
 	{
-		uint8_t scaleDegree = note % TUNER_NOTE_COUNT;
-		double numSemitones = scaleDegree;
+		note %= TUNER_NOTE_COUNT; // only 12 tunable notes
 		
 		if(mask&1)
 		{
-			// TODO: pitch wheel / bend should set coarse tuning
-			return;
+			// The pitch wheel sets absolute pitch
+			double tuning = note + bend * (-1.0 / INT16_MIN);
+			
+#ifdef DEBUG
+			print("Retune: ");
+			phex16(bend);
+			print("\n");
+#endif			
+			
+			tuner_setNoteTuning(note, tuning);
 		}
 		
-		if(mask&2)
+		if(mask&2 && ui.lastActivePot==ppModWheel)
 		{
-			// TODO: mod wheel should provide a last-position-relative 'nudge' fine tuning
-			// but currently it works like the pitch-wheel will in the future:
-			// absolute adjusts +/- 1 semitone from Equal Tempered
+			// The mod wheel 'nudges' the pitch relative to its previous value
+			int32_t deltaNudge = modulation - ui.adjustedLastActivePotValue;
 			
-			numSemitones = (modulation * (1.0f / UINT16_MAX)) + (((double)scaleDegree)-0.5f);
-			tuner_setNoteTuning(scaleDegree, numSemitones);
-			computeBenderCVs();
-			computeTunedCVs(1,-1);			
-		}		
+#ifdef DEBUG
+			print("Nudge: ");
+			if(deltaNudge > 0) {
+				phex16(deltaNudge);
+			} else {
+				print("-");
+				phex16(-deltaNudge);
+			}
+			print("\n");
+#endif
+			
+			tuner_nudgeNoteTuning(note, deltaNudge);
+		}
+		
+		computeBenderCVs();
+		computeTunedCVs(1,-1);			
 	}
 }
 
