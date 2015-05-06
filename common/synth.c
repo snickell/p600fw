@@ -1227,7 +1227,7 @@ static inline int8_t retuneLastNotePressedMode(int16_t bend, uint16_t modulation
 {
 	uint8_t note = 0;
 	
-	if (ui.retuneLastNotePressedMode && assigner_getLatestNotePressed(&note))
+	if (ui.retuneLastNotePressedMode && assigner_getLatestNoteIfPressed(&note))
 	{
 		note %= TUNER_NOTE_COUNT; // only 12 tunable notes
 		
@@ -1248,7 +1248,9 @@ static inline int8_t retuneLastNotePressedMode(int16_t bend, uint16_t modulation
 		if(mask&2)
 		{
 			// The mod wheel 'nudges' the pitch relative to its previous value
-			int32_t deltaNudge = (int32_t)modulation - ui.lastModWheelValue;
+			
+			int32_t deltaNudge = ((int32_t)modulation - ui.lastModWheelValue);
+			deltaNudge >>= 8; // ModWheel only sets higher 8-bits
 			
 			if (deltaNudge != 0)
 			{
