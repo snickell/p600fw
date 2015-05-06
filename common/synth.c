@@ -1226,7 +1226,6 @@ void synth_uartEvent(uint8_t data)
 static inline int8_t retuneLastNotePressedMode(int16_t bend, uint16_t modulation, uint8_t mask)
 {
 	uint8_t note = 0;
-	int8_t interceptedWheelEvent = 0;
 	
 	if (ui.retuneLastNotePressedMode && assigner_getLatestNotePressed(&note))
 	{
@@ -1249,32 +1248,33 @@ static inline int8_t retuneLastNotePressedMode(int16_t bend, uint16_t modulation
 		if(mask&2)
 		{
 			// The mod wheel 'nudges' the pitch relative to its previous value
-			int32_t deltaNudge = modulation - ui.lastModWheelValue;
+			int32_t deltaNudge = (int32_t)modulation - ui.lastModWheelValue;
 			
+			if (deltaNudge != 0)
+			{
 #ifdef DEBUG
-			print("Nudge: ");
-			if(deltaNudge > 0) {
-				phex16(deltaNudge);
-			} else {
-				print("-");
-				phex16(-deltaNudge);
-			}
-			print("\n");
+				print("Nudge: ");
+				if(deltaNudge > 0) {
+					phex16(deltaNudge);
+				} else {
+					print("-");
+					phex16(-deltaNudge);
+				}
+				print("\n");
 #endif
 			
-			tuner_nudgeNoteTuning(note, deltaNudge);
+				tuner_nudgeNoteTuning(note, deltaNudge);	
+			}				
 		}
 		
 		computeBenderCVs();
-		computeTunedCVs(1,-1);
-		
-		interceptedWheelEvent = 1; // don't run the normal synth_wheelEvent, we used it
+		computeTunedCVs(1,-1);		
 	}
 	
 	if(mask&2)
 		ui.lastModWheelValue = modulation;
 	
-	return interceptedWheelEvent;
+	return ui.retuneLastNotePressedMode;
 }
 
 void synth_wheelEvent(int16_t bend, uint16_t modulation, uint8_t mask, int8_t outputToMidi)
