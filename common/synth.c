@@ -1222,11 +1222,13 @@ void synth_uartEvent(uint8_t data)
 	midi_newData(data);
 }
 
-static void retuneLastNotePressed(int16_t bend, uint16_t modulation, uint8_t mask)
+// returns TRUE if we intercepted the synth_wheelEvent for retuning
+static inline int8_t retuneLastNotePressedMode(int16_t bend, uint16_t modulation, uint8_t mask)
 {
 	uint8_t note = 0;
+	int8_t interceptedWheelEvent = 0;
 	
-	if (assigner_getLatestNotePressed(&note))
+	if (ui.retuneLastNotePressedMode && assigner_getLatestNotePressed(&note))
 	{
 		note %= TUNER_NOTE_COUNT; // only 12 tunable notes
 		
@@ -1244,10 +1246,10 @@ static void retuneLastNotePressed(int16_t bend, uint16_t modulation, uint8_t mas
 			tuner_setNoteTuning(note, tuning);
 		}
 		
-		if(mask&2 && ui.lastActivePot==ppModWheel)
+		if(mask&2)
 		{
 			// The mod wheel 'nudges' the pitch relative to its previous value
-			int32_t deltaNudge = modulation - ui.adjustedLastActivePotValue;
+			int32_t deltaNudge = modulation - ui.lastModWheelValue;
 			
 #ifdef DEBUG
 			print("Nudge: ");
@@ -1264,17 +1266,22 @@ static void retuneLastNotePressed(int16_t bend, uint16_t modulation, uint8_t mas
 		}
 		
 		computeBenderCVs();
-		computeTunedCVs(1,-1);			
+		computeTunedCVs(1,-1);
+		
+		interceptedWheelEvent = 1; // don't run the normal synth_wheelEvent, we used it
 	}
+	
+	if(mask&2)
+		ui.lastModWheelValue = modulation;
+	
+	return interceptedWheelEvent;
 }
 
 void synth_wheelEvent(int16_t bend, uint16_t modulation, uint8_t mask, int8_t outputToMidi)
 {
-	if (ui.retuneLastNotePressedMode)
-	{
-		retuneLastNotePressed(bend, modulation, mask);
+	// If we're in ui.retuneLastNotePressedMode, don't update synth bend/mod
+	if (retuneLastNotePressedMode(bend, modulation, mask))
 		return;
-	}
 
 	if(mask&1)
 	{

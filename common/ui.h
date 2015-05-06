@@ -32,7 +32,9 @@ struct ui_s
 	int8_t doubleClickTimer;
 	p600Button_t prevMiscButton;
 	int8_t voice;
+	
 	int8_t retuneLastNotePressedMode;
+	uint16_t lastModWheelValue; // permits relative mapped modulation 'nudges'
 };
 
 extern struct ui_s ui;
